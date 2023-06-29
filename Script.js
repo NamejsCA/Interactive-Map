@@ -1,71 +1,72 @@
 // Initialize the map
 var map = L.map('map').setView([0, 0], 1); // Set the initial view to center and zoom level
 
-// Create an object to store the markers
-var markers = {};
+// Create marker groups
+var RisingStarMushroom = L.layerGroup();
+var TheObjectFromEarth = L.layerGroup();
 
-// Function to add a marker
-function addMarker(latlng) {
-  var marker = L.marker(latlng).addTo(map).bindPopup('New Marker');
-  var markerId = marker._leaflet_id;
-  markers[markerId] = marker;
-  saveMarkers(); // Save the markers to local storage
-}
-
-// Function to remove a marker
-function removeMarker(markerId) {
-  var marker = markers[markerId];
-  if (marker) {
-    map.removeLayer(marker);
-    delete markers[markerId];
-    saveMarkers(); // Save the markers to local storage
+// Add markers to group 1
+var markersRisingStarMushroom = [
+  {
+    latlng: [51.5074, -0.1278],
+    popupContent: 'Marker 1',
+    imageUrl: 'marker1.png' // Optional image URL for the marker
+  },
+  {
+    latlng: [48.8566, 2.3522],
+    popupContent: 'Marker 2'
+    // imageUrl not specified for this marker
   }
-}
-
-// Function to handle left-click events on the map
-function handleLeftClick(event) {
-  var latlng = event.latlng;
-
-  // Add a marker at the clicked location
-  addMarker(latlng);
-}
-
-// Function to handle right-click events on markers
-function handleRightClick(markerId) {
-  removeMarker(markerId);
-}
-
-// Add event listener for left-click events on the map
-map.on('click', handleLeftClick);
-
-// Function to save the markers to local storage
-function saveMarkers() {
-  var markersData = {};
-  for (var markerId in markers) {
-    var marker = markers[markerId];
-    markersData[markerId] = marker.getLatLng();
+];
+markersRisingStarMushroom.forEach(function (markerData) {
+  var marker = L.marker(markerData.latlng).bindPopup(getMarkerDescription(markerData.latlng));
+  if (markerData.imageUrl) {
+    marker.on('popupopen', function () {
+      var image = document.createElement('img');
+      image.src = markerData.imageUrl;
+      marker.getPopup().setContent(markerData.popupContent + '<br>' + image.outerHTML);
+    });
   }
-  localStorage.setItem('markers', JSON.stringify(markersData));
-}
+  RisingStarMushroom.addLayer(marker);
+});
 
-// Function to load the markers from local storage
-function loadMarkers() {
-  var markersData = localStorage.getItem('markers');
-  if (markersData) {
-    markersData = JSON.parse(markersData);
-    for (var markerId in markersData) {
-      var latlng = markersData[markerId];
-      addMarker(latlng);
-    }
+// Add markers to group 2
+var markersTheObjectFromEarth = [
+  {
+    latlng: [40.7128, -74.0060],
+    popupContent: 'Marker 3',
+    imageUrl: 'marker3.png' // Optional image URL for the marker
+  },
+  {
+    latlng: [37.7749, -122.4194],
+    popupContent: 'Marker 4'
+    // imageUrl not specified for this marker
   }
-}
+];
+markersTheObjectFromEarth.forEach(function (markerData) {
+  var marker = L.marker(markerData.latlng).bindPopup(getMarkerDescription(markerData.latlng));
+  if (markerData.imageUrl) {
+    marker.on('popupopen', function () {
+      var image = document.createElement('img');
+      image.src = markerData.imageUrl;
+      marker.getPopup().setContent(markerData.popupContent + '<br>' + image.outerHTML);
+    });
+  }
+  TheObjectFromEarth.addLayer(marker);
+});
 
-// Load the markers from local storage
-loadMarkers();
+// Create an object to store the marker groups
+var markerGroups = {
+  'Rising Star Mushroom': RisingStarMushroom,
+  'The Object From Earth': TheObjectFromEarth
+};
+
+// Add marker groups to the map
+L.control.layers(null, markerGroups).addTo(map);
 
 // Add custom map image overlay
 var imageUrl = 'https://static.wikia.nocookie.net/fantastic-frontier-roblox/images/a/a2/Map_Blank.png/revision/latest?cb=20180830202757';
-var imageWidth = 200; // Width of your custom map image
+var imageWidth = 230; // Width of your custom map image
 var imageHeight = 1117; // Height of your custom map image
 
 // Calculate the bounds based on image width and height
@@ -77,26 +78,7 @@ var customMap = L.imageOverlay(imageUrl, imageBounds).addTo(map);
 // Adjust the map view to fit the image bounds
 map.fitBounds(imageBounds);
 
-// Event listener for marker right-click events
-function handleMarkerRightClick(event) {
-  var marker = event.target;
-  var markerId = marker._leaflet_id;
-  handleRightClick(markerId);
-}
-
-// Add event listener to each marker for right-click events
-for (var markerId in markers) {
-  var marker = markers[markerId];
-  marker.on('contextmenu', handleMarkerRightClick);
-}
-
-// Function to add a marker
-function addMarker(latlng) {
-  var lat = latlng.lat;
-  var lng = latlng.lng;
-
-  var marker = L.marker(latlng).addTo(map).bindPopup('Latitude: ' + lat + '<br>Longitude: ' + lng + '<br>New Marker');
-  var markerId = marker._leaflet_id;
-  markers[markerId] = marker;
-  saveMarkers(); // Save the markers to local storage
+// Function to get marker description with latitude and longitude
+function getMarkerDescription(latlng) {
+  return 'Latitude: ' + latlng[0].toFixed(4) + '<br>Longitude: ' + latlng[1].toFixed(4);
 }
