@@ -89,7 +89,7 @@ const mainCategoryGroups = {}; // Store groups for main categories
 const iconCache = {};
 
 function getIcon(mainCategory, subCategory) {
-    const path = `images/${mainCategory}/${subCategory}.webp`;
+    const path = `Images/${mainCategory}/${subCategory}.webp`;
 
     if (!iconCache[path]) {
         iconCache[path] = L.icon({
@@ -237,7 +237,7 @@ for (const mainCategory in data) {
 
         const dot = document.createElement("img");
             dot.className = "layer-icon";
-            dot.src = `images/${mainCategory}/${subCategory}.webp`;
+            dot.src = `Images/${mainCategory}/${subCategory}.webp`;
             dot.alt = subCategory;
 
         const label=document.createElement("span");
