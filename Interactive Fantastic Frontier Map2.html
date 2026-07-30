@@ -1,21 +1,387 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>Interactive Map</title>
-  <style>
-    #map {
-      height: 100vh;
-      width: 100%;
-    }
-  </style>
+    <title>Interactive Frontier Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css" />
+        
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+    <style>
+        #map {
+            width: 100%;
+            height: 800px;
+        }
+    </style>
 </head>
 <body>
-  <div id="map"></div>
+    <div id="map"></div>
+<div id="panel">
+    <div id="panel-header">
+        <h2>Spawner Overlay</h2>
+        <input id="layer-search" type="text" placeholder="Search spawners...">
+    </div>
 
-  <!-- Include the necessary scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/leaflet/dist/leaflet.js"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet/dist/leaflet.css">
-  <script src="script cordinates.js"></script>
+    <div id="panel-body">
+
+        <div id="layer-list"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+<script src="data.js"></script>
+
+<script>
+    // Initialize map
+    const map = L.map('map', {
+        crs: L.CRS.Simple,
+        minZoom: -3,
+        maxBoundsViscosity: 0.8
+    });
+
+        // Map image dimensions
+        const imageWidth = 5824 * 1.24; // Adjusted width
+        const imageHeight = 4708 * 1.24; // Adjusted height
+        const defaultBounds = [[0, 0], [imageHeight, imageWidth]];
+        let currentBounds = [...defaultBounds]; // Copy of bounds for adjustments
+
+        // Manually set offsets
+        const xOffset = -1671;
+        const yOffset = -2183;
+
+        // Image URL
+        const imageUrl = 'https://i.imgur.com/1LiUfk5.png';
+
+        // Update bounds with offsets
+        currentBounds = [
+            [defaultBounds[0][0] + yOffset, defaultBounds[0][1] + xOffset],
+            [defaultBounds[1][0] + yOffset, defaultBounds[1][1] + xOffset]
+        ];
+
+    // Add image overlay with adjusted bounds
+    const imageOverlay = L.imageOverlay(imageUrl, currentBounds).addTo(map);
+
+    // Fit the map to the adjusted bounds
+    map.fitBounds(currentBounds);
+
+    //Bounds area 
+    const expandedBounds = [
+        [
+            currentBounds[0][0] - 3000, //Down
+            currentBounds[0][1] - 5000 //Left
+        ],
+        [
+            currentBounds[1][0] + 3000, //Up
+            currentBounds[1][1] + 6000 //Right
+        ]
+    ];
+
+    map.setMaxBounds(expandedBounds);
+        // Coordinate data grouped by categories
+const layers = {};
+const mainCategoryGroups = {}; // Store groups for main categories
+
+// Add main categories and subcategories to the layer control
+for (const mainCategory in data) {
+    const mainGroup = L.layerGroup(); // Group for the main category
+    const subGroups = {}; // Store subcategory groups for synchronization
+
+    for (const subCategory in data[mainCategory]) {
+        const subGroup = L.layerGroup(); // Group for the subcategory
+        data[mainCategory][subCategory].forEach(([x, z]) => {
+            const marker = L.circleMarker([1000 - x, z + 500], {
+                radius: 5,
+                color: 'blue',
+            }).bindPopup(`${subCategory}: [${x.toFixed(2)}, ${z.toFixed(2)}]`);
+            subGroup.addLayer(marker);
+        });
+
+        // Store subcategory group for synchronization
+        subGroups[subCategory] = subGroup;
+
+        // Add subcategory to the control layers independently
+        layers[`${mainCategory} - ${subCategory}`] = subGroup;
+    }
+
+    // Add main category to layers
+    layers[mainCategory] = mainGroup;
+
+    // Store main category group for controlling visibility
+    mainCategoryGroups[mainCategory] = {
+        group: mainGroup,
+        subGroups: subGroups
+    };
+
+    // Initially, add no subcategory to the map, so they start off as hidden
+    if (mainCategory !== 'Monster' && mainCategory !== 'Harvestable' && mainCategory !== 'Birds') {
+        Object.values(subGroups).forEach(subGroup => map.addLayer(subGroup));
+    }
+}
+
+// Function to synchronize main category with subcategories (independent for each category)
+function syncMainCategory(mainCategory, isVisible) {
+    const { subGroups } = mainCategoryGroups[mainCategory];
+    if (isVisible) {
+        // Add all subgroups to the map
+        Object.values(subGroups).forEach(subGroup => map.addLayer(subGroup));
+    } else {
+        // Remove all subgroups from the map
+        Object.values(subGroups).forEach(subGroup => map.removeLayer(subGroup));
+    }
+}
+
+const layerList = document.getElementById("layer-list");
+const layerSearch = document.getElementById("layer-search");
+const layerRows = [];
+const categoryTitles = [];
+
+// Category color ranges
+const categoryHue = {
+    Monster: 0,        // Red
+    Harvestable: 120,  // Green
+    Birds: 45          // Yellow/orange
+};
+
+
+const categoryIndexes = {
+    Monster:0,
+    Harvestable:0,
+    Birds:0
+};
+
+
+// Track category groups
+const categoryLayers = {};
+
+
+// Create custom layer menu
+for (const mainCategory in data) {
+
+
+    categoryLayers[mainCategory] = [];
+
+
+    // Category title button
+    const title = document.createElement("div");
+    title.className = "section-title";
+    title.style.cursor = "pointer";
+    title.textContent = "▶ " + mainCategory;
+
+
+    let categoryVisible = false;
+
+
+    title.onclick = ()=>{
+
+        categoryVisible = !categoryVisible;
+
+
+        categoryLayers[mainCategory].forEach(layer=>{
+
+            if(categoryVisible){
+                map.addLayer(layer.group);
+                layer.checkbox.checked = true;
+            }
+            else{
+                map.removeLayer(layer.group);
+                layer.checkbox.checked = false;
+            }
+
+        });
+
+
+        title.textContent =
+            (categoryVisible ? "▼ " : "▶ ")
+            + mainCategory;
+
+    };
+
+
+    layerList.appendChild(title);
+    categoryTitles.push({
+        name: mainCategory.toLowerCase(),
+        element:title
+    });
+
+
+    for (const subCategory in data[mainCategory]) {
+
+
+        // Generate colors inside category
+        const index = categoryIndexes[mainCategory]++;
+
+        const hue = categoryHue[mainCategory];
+
+        const saturation = 70 + (index % 3) * 10;
+        const lightness = 35 + (index % 5) * 8;
+
+
+        const color =
+            `hsl(${hue + index*12}, ${saturation}%, ${lightness}%)`;
+
+
+
+        const subGroup = L.layerGroup();
+
+
+
+        data[mainCategory][subCategory].forEach(([x,z])=>{
+
+
+            const marker = L.circleMarker(
+                [1000-x,z+500],
+                {
+                    radius:5,
+                    color:color,
+                    fillColor:color,
+                    fillOpacity:0.25
+                }
+            )
+            .bindPopup(
+                `${subCategory}: [${x.toFixed(2)}, ${z.toFixed(2)}]`
+            );
+
+
+            subGroup.addLayer(marker);
+
+        });
+
+
+
+        const row=document.createElement("div");
+        row.className="layer-item";
+
+
+
+        const dot=document.createElement("span");
+        dot.className="layer-dot";
+        dot.style.background=color;
+
+
+
+        const label=document.createElement("span");
+        label.className="layer-label";
+        label.textContent=subCategory;
+
+
+
+        const count=document.createElement("span");
+        count.className="layer-count";
+        count.textContent=data[mainCategory][subCategory].length;
+
+
+
+        const checkbox=document.createElement("input");
+        checkbox.type="checkbox";
+        checkbox.className="layer-check";
+
+
+
+        function toggle(){
+
+            checkbox.checked=!checkbox.checked;
+
+            if(checkbox.checked){
+                map.addLayer(subGroup);
+            }
+            else{
+                map.removeLayer(subGroup);
+            }
+
+        }
+
+
+
+        row.onclick=(e)=>{
+
+            if(e.target !== checkbox){
+                toggle();
+            }
+
+        };
+
+
+
+        checkbox.onclick=(e)=>{
+            e.stopPropagation();
+        };
+
+
+
+        checkbox.onchange=()=>{
+
+            if(checkbox.checked){
+                map.addLayer(subGroup);
+            }
+            else{
+                map.removeLayer(subGroup);
+            }
+
+        };
+
+
+
+        categoryLayers[mainCategory].push({
+            group:subGroup,
+            checkbox:checkbox
+        });
+
+
+
+        row.appendChild(dot);
+        row.appendChild(label);
+        row.appendChild(count);
+        row.appendChild(checkbox);
+
+
+        layerList.appendChild(row);
+        layerRows.push({
+            name: subCategory.toLowerCase(),
+            category: mainCategory.toLowerCase(),
+            element: row
+        });
+            layerSearch.addEventListener("input", ()=>{
+
+            const search = layerSearch.value.toLowerCase();
+
+
+            layerRows.forEach(item=>{
+
+                const match =
+                    item.name.includes(search) ||
+                    item.category.includes(search);
+
+
+                item.element.style.display =
+                    match ? "flex" : "none";
+
+            });
+
+
+
+            categoryTitles.forEach(item=>{
+
+                const hasVisible =
+                    layerRows.some(row =>
+                        row.category === item.name &&
+                        row.element.style.display !== "none"
+                    );
+
+
+                item.element.style.display =
+                    hasVisible ? "block" : "none";
+
+            });
+
+        });
+        
+    }
+}
+</script>
 </body>
 </html>
