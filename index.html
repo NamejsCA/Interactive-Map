@@ -86,6 +86,23 @@
 const layers = {};
 const mainCategoryGroups = {}; // Store groups for main categories
 
+const iconCache = {};
+
+function getIcon(mainCategory, subCategory) {
+    const path = `images/${mainCategory}/${subCategory}.webp`;
+
+    if (!iconCache[path]) {
+        iconCache[path] = L.icon({
+            iconUrl: path,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+            popupAnchor: [0, -12]
+        });
+    }
+
+    return iconCache[path];
+}
+
 // Add main categories and subcategories to the layer control
 for (const mainCategory in data) {
     const mainGroup = L.layerGroup(); // Group for the main category
@@ -166,41 +183,10 @@ for (const mainCategory in data) {
     categoryLayers[mainCategory] = [];
 
 
-    // Category title button
+    // Category title
     const title = document.createElement("div");
     title.className = "section-title";
-    title.style.cursor = "pointer";
-    title.textContent = "▶ " + mainCategory;
-
-
-    let categoryVisible = false;
-
-
-    title.onclick = ()=>{
-
-        categoryVisible = !categoryVisible;
-
-
-        categoryLayers[mainCategory].forEach(layer=>{
-
-            if(categoryVisible){
-                map.addLayer(layer.group);
-                layer.checkbox.checked = true;
-            }
-            else{
-                map.removeLayer(layer.group);
-                layer.checkbox.checked = false;
-            }
-
-        });
-
-
-        title.textContent =
-            (categoryVisible ? "▼ " : "▶ ")
-            + mainCategory;
-
-    };
-
+    title.textContent = mainCategory;
 
     layerList.appendChild(title);
     categoryTitles.push({
@@ -233,20 +219,13 @@ for (const mainCategory in data) {
         data[mainCategory][subCategory].forEach(([x,z])=>{
 
 
-            const marker = L.circleMarker(
-                [1000-x,z+500],
+           const marker = L.marker(
+                [1000 - x, z + 500],
                 {
-                    radius:5,
-                    color:color,
-                    fillColor:color,
-                    fillOpacity:0.25
+                    icon: getIcon(mainCategory, subCategory)
                 }
-            )
-            .bindPopup(
-                `${subCategory}: [${x.toFixed(2)}, ${z.toFixed(2)}]`
             );
-
-
+        
             subGroup.addLayer(marker);
 
         });
@@ -256,13 +235,10 @@ for (const mainCategory in data) {
         const row=document.createElement("div");
         row.className="layer-item";
 
-
-
-        const dot=document.createElement("span");
-        dot.className="layer-dot";
-        dot.style.background=color;
-
-
+        const dot = document.createElement("img");
+            dot.className = "layer-icon";
+            dot.src = `images/${mainCategory}/${subCategory}.webp`;
+            dot.alt = subCategory;
 
         const label=document.createElement("span");
         label.className="layer-label";
@@ -279,8 +255,7 @@ for (const mainCategory in data) {
         const checkbox=document.createElement("input");
         checkbox.type="checkbox";
         checkbox.className="layer-check";
-
-
+    
 
         function toggle(){
 
