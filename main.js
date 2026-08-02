@@ -101,7 +101,10 @@ new L.TileLayer.Custom('', {
 }).addTo(map);
 
 // Start centered
-map.setView(map.unproject([mapW / 2, mapH / 2], maxZoom), 2);
+map.setView(
+    map.unproject([mapW * 0.25, mapH * 0.25], maxZoom),
+    0
+);
 
 // ─────────────────────────────────────────
 // Game coord conversion
