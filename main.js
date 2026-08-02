@@ -1,3 +1,9 @@
+const panel = document.getElementById("panel");
+const toggleButton = document.getElementById("panel-toggle");
+
+toggleButton.addEventListener("click", () => {
+    panel.classList.toggle("collapsed");
+});
 // ─────────────────────────────────────────
 // Tilemap config
 // ─────────────────────────────────────────
