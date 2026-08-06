@@ -60,7 +60,7 @@ map.getContainer().addEventListener('wheel', (e) => {
 
 // Add this so the map canvas background shows through empty tile slots
 
-map.getContainer().style.background = '#cae0fc'; // match your page background
+map.getContainer().style.background = '#bed2ed'; // match your page background
 
 // Custom tile layer
 L.TileLayer.Custom = L.TileLayer.extend({
