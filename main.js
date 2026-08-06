@@ -12,25 +12,25 @@ const WORLD_MAX_X = 3000;
 const WORLD_MIN_Z = -4000;
 const WORLD_MAX_Z = 1000;
 
-const MAX_COLS = 54;
-const MAX_ROWS = 76;
 const NUM_LEVELS = 5;
 const TILE_SIZE = 256;
 
 const zoomGrids = [
-    {cols:3, rows:4},
-    {cols:6, rows:9},
-    {cols:13, rows:19},
-    {cols:27, rows:38},
-    {cols:54, rows:76}
+{cols:3, rows:3},
+{cols:5, rows:6},
+{cols:9, rows:12},
+{cols:17, rows:23},
+{cols:33, rows:46},
 ];
 
 const maxZoom = NUM_LEVELS - 1;
 
 const highest = zoomGrids[zoomGrids.length - 1];
 
-const mapW = highest.cols * TILE_SIZE;
-const mapH = highest.rows * TILE_SIZE;
+const IMAGE_WIDTH = 8208;
+const IMAGE_HEIGHT = 11522; 
+const mapW = IMAGE_WIDTH;
+const mapH = IMAGE_HEIGHT;
 
 const map = L.map('map', {
     crs: L.CRS.Simple,
@@ -59,17 +59,8 @@ map.getContainer().addEventListener('wheel', (e) => {
 }, { passive: false });
 
 // Add this so the map canvas background shows through empty tile slots
-map.getContainer().style.background = '#cae0fc'; // match your page background
 
-map.getContainer().addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY < 0 ? 1 : -1;
-    const currentZoom = map.getZoom();
-    const newZoom = Math.min(Math.max(currentZoom + delta, map.getMinZoom()), map.getMaxZoom());
-    if (newZoom === currentZoom) return;
-    const latlng = map.containerPointToLatLng(map.mouseEventToContainerPoint(e));
-    map.setZoomAround(latlng, newZoom);
-}, { passive: false });
+map.getContainer().style.background = '#cae0fc'; // match your page background
 
 // Custom tile layer
 L.TileLayer.Custom = L.TileLayer.extend({
